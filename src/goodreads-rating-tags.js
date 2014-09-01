@@ -49,11 +49,11 @@ function registerMutationObserver(selectorCriteria, monitorSubtree, callbackFunc
     var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
     // Find the requested DOM nodes
-    var objShelfList     = document.querySelectorAll(selectorCriteria);
+    var targetNodeList = document.querySelectorAll(selectorCriteria);
 
 
     // Make sure the required elements were found, otherwise don't install the observer
-    if ((objShelfList != null) && (MutationObserver != null)) {
+    if ((targetNodeList != null) && (MutationObserver != null)) {
 
         // Create an observer and callback
         var observer = new MutationObserver( callbackFunction );
@@ -61,9 +61,9 @@ function registerMutationObserver(selectorCriteria, monitorSubtree, callbackFunc
         // Start observing the target element(s)
         //   Note : Repeated observe calls on the same target just replace the previous observe, so it's
         //          ok to re-observe the same target in the future without first disconnecting from it
-        for(var i = 0; i < objShelfList.length; ++i) {
+        for(var i = 0; i < targetNodeList.length; ++i) {
 
-            observer.observe(objShelfList[i], {
+            observer.observe(targetNodeList[i], {
                 attributes: true,
                 childList: true,
                 characterData: true,
