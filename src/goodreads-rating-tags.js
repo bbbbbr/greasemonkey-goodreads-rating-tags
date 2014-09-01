@@ -4,20 +4,14 @@
 // @description Converts selected tags on GoodReads into rating images (such as tags with half-star ratings)
 // @include     /^https?://.*\.goodreads\.com/.*$/
 // @grant       none
-// @version     1.0.0
+// @version     1.0.1
 // ==/UserScript==
 
 
 
-// TODO :
-//
-// * Make another attempt at using jquery without goodreads version conflict - load just within tamper/greasemonkey?
-// * Flag elements that have already been updated and don't update them again (necessary if text is not removed). Consider dataset attribute
-
 // TODO-MAYBE :
 //
 // * Consider making text removal optional
-// * Improve hover background color
 
 
 
@@ -215,25 +209,43 @@ function convertTagsToImages()
 
         elAnchor = elLinks[ i ];
 
-        var match = myRegexp.exec(elAnchor.text);
-        // Note : match[0] = full match text, [1] = "stars" or "clouds", [2] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
-        if (match != null) {
+        // Only convert anchor tags which haven't already been inspected
+        if (elAnchor.hasAttribute("data-tag-image-converted") == false)
+        {
 
-            // Strip out tag name and save off any trailing text (trailing text gets re-appended later)
-            objText = elAnchor.text.replace(match[0], "");
-            // Remove tag text temporarily
-            elAnchor.innerHTML = "";
+            // Note : match[0] = full match text, [1] = "stars" or "clouds", [2] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
+            var match = myRegexp.exec(elAnchor.text);
 
-            // Render tag image
-            renderTagImages(elAnchor, match[1], match[2]);
+            if (match != null) {
 
-            // prevent line breaks
-            elAnchor.style.whiteSpace="nowrap";
+                // Strip out tag name and save off any trailing text (trailing text gets re-appended later)
+                objText = elAnchor.text.replace(match[0], "");
+                // Remove tag text temporarily
+                elAnchor.innerHTML = "";
 
-            // Restore trailing text
-            elAnchor.innerHTML = elAnchor.innerHTML + objText;
-        }
-    }
+                // Render tag image
+                renderTagImages(elAnchor, match[1], match[2]);
+
+
+                // Prevent line breaks in the middle of our stars
+                elAnchor.style.whiteSpace="nowrap";
+
+                // Restore trailing text
+                elAnchor.innerHTML = elAnchor.innerHTML + objText;
+
+            } // End regex string match test
+
+
+            // Flag the anchor has having been converted/inspected so it won't get images appended
+            // multiple times if the page is re-scanned to catch dynamic content (if tag text was not cleared).
+            //
+            //   Note : Data set name becomes "data-tag-image-converted" when referenced as an Attribute.
+            //
+            elAnchor.dataset.tagImageConverted = "true";
+
+        } // End previously converted test
+
+    } // End loop through all matching elements
 }
 
 
