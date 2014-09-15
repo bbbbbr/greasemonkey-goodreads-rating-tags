@@ -4,7 +4,7 @@
 // @description Converts selected tags on GoodReads into rating images (such as tags with half-star ratings)
 // @include     /^https?://.*\.goodreads\.com/.*$/
 // @grant       none
-// @version     1.0.2
+// @version     1.0.3
 // ==/UserScript==
 
 
@@ -116,6 +116,31 @@ function installInfiniteScrollHook()
     );
 }
 
+//
+// Monitors for tags getting in-place renamed on the edit shelves page
+//
+function installEditShelfHook()
+{
+    registerMutationObserver('[class=displayShelfNameLnk]', false,
+        function(mutations) {
+
+            mutations.forEach( function(mutation) {
+
+                // Only inspect nodes which have an 'inspected' flag to remove
+                if (mutation.target.hasAttribute("data-tag-image-inspected") == true)
+                {
+                    // If a rename detection sub-tag was not found then it was probably removed by a rename event
+                    // and this node needs to have it's 'inspected' flag cleared so it gets re-examined
+                    if (mutation.target.querySelector('[class=tagRenameCanary]') == null) {
+                            delete mutation.target.dataset.tagImageInspected;
+                    }
+                }
+            } );
+
+            convertTagsToImages();
+        } ); // End observer callback function
+}
+
 
 //
 // Append an <img> tag with the given image data to an element
@@ -126,6 +151,7 @@ function appendImage(parentObj, imgData)
         tagImg.src = imgData;
     parentObj.appendChild(tagImg);
 }
+
 
 //
 // Append a <span> tag as a rating label (with a trailing space) to an element.
@@ -146,6 +172,19 @@ function appendTagLabel(parentObj, labelText)
 
         parentObj.appendChild(tagSpan);
     }
+}
+
+
+//
+// Append an empty <span> tag to an element to help with detecting tag rename events
+//
+function appendRenameCanary(parentObj)
+{
+    var tagSpan           = document.createElement('span');
+    tagSpan.style.display = "none";
+    tagSpan.className     = "tagRenameCanary";
+
+    parentObj.appendChild(tagSpan);
 }
 
 
@@ -197,7 +236,7 @@ function convertTagsToImages()
         elAnchor = elLinks[ i ];
 
         // Only convert anchor tags which haven't already been inspected
-        if (elAnchor.hasAttribute("data-tag-image-converted") == false)
+        if (elAnchor.hasAttribute("data-tag-image-inspected") == false)
         {
 
             // Note : match[0] = full match text, [1] = optional label, [2] = "stars" or "clouds", [3] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
@@ -226,14 +265,19 @@ function convertTagsToImages()
             } // End regex string match test
 
 
-            // Flag the anchor has having been converted/inspected so it won't get images appended
+            // If it's a tag on the edit-shelves page then add a shim to detect when they get renamed
+            if (elAnchor.className.indexOf('displayShelfNameLnk') > -1) {
+                appendRenameCanary(elAnchor);
+            }
+
+            // Flag the anchor has having been inspected so it won't get images appended
             // multiple times if the page is re-scanned to catch dynamic content (if tag text was not cleared).
             //
-            //   Note : Data set name becomes "data-tag-image-converted" when referenced as an Attribute.
+            //   Note : Data set name becomes "data-tag-image-inspected" when referenced as an Attribute.
             //
-            elAnchor.dataset.tagImageConverted = "true";
+            elAnchor.dataset.tagImageInspected = "true";
 
-        } // End previously converted test
+        } // End previously inspected test
 
     } // End loop through all matching elements
 }
@@ -254,3 +298,4 @@ convertTagsToImages();
 installInfiniteScrollHook();
 installTagShelfUpdateHook();
 installPopupReviewHook();
+installEditShelfHook();
