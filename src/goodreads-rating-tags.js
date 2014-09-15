@@ -8,10 +8,17 @@
 // ==/UserScript==
 
 
-
-// TODO-MAYBE :
+// Some examples of the tag naming format that will get matched :
+// (The range is 0-0 to 5-0)
 //
-// * Consider making text removal optional
+//   clouds-3-0
+//   stars-0-5
+//   rating-clouds-3-0
+//   rating-stars-0-5
+//   example-clouds-2-0
+//   example-stars-0-5
+//   another-example-clouds-3-0
+//   another-example-stars-0-5
 
 
 
@@ -120,6 +127,27 @@ function appendImage(parentObj, imgData)
     parentObj.appendChild(tagImg);
 }
 
+//
+// Append a <span> tag as a rating label (with a trailing space) to an element.
+// The label won't be added if the text is blank or has the generic name "rating"
+//
+function appendTagLabel(parentObj, labelText)
+{
+    if ((labelText != "") && (labelText != "rating"))
+    {
+        var tagSpan                   = document.createElement('span');
+
+        tagSpan.innerHTML             = labelText;
+        tagSpan.style.color           = "#555";
+        tagSpan.style.backgroundColor = "#ddd";
+        tagSpan.style.borderRadius    = "2px";
+        tagSpan.style.padding         = "2px 5px 2px 5px";
+        tagSpan.style.marginRight     = "5px";
+
+        parentObj.appendChild(tagSpan);
+    }
+}
+
 
 //
 // Render a tag rating based on a type ("stars","clouds) and a numeric value in tag format ("4-0","1-5", etc)
@@ -158,7 +186,7 @@ function renderTagImages(parentObj, imgType, imgValue)
 //
 function convertTagsToImages()
 {
-    var myRegexp = /rating-(stars|clouds)-(\d-\d)/;
+    var tagRegexp = /([\w-]*?)-*(stars|clouds)-(\d-\d)/;
     var objText;
     var elAnchor;
     var elLinks = document.getElementsByTagName( 'a' );
@@ -172,21 +200,24 @@ function convertTagsToImages()
         if (elAnchor.hasAttribute("data-tag-image-converted") == false)
         {
 
-            // Note : match[0] = full match text, [1] = "stars" or "clouds", [2] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
-            var match = myRegexp.exec(elAnchor.text);
+            // Note : match[0] = full match text, [1] = optional label, [2] = "stars" or "clouds", [3] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
+            var match = tagRegexp.exec(elAnchor.text);
 
             if (match != null) {
 
                 // Strip out tag name and save off any trailing text (trailing text gets re-appended later)
                 objText = elAnchor.text.replace(match[0], "");
+
                 // Remove tag text temporarily
                 elAnchor.innerHTML = "";
 
+                // Append the tag label, if suitable
+                appendTagLabel(elAnchor, match[1]);
+
                 // Render tag image
-                renderTagImages(elAnchor, match[1], match[2]);
+                renderTagImages(elAnchor, match[2], match[3]);
 
-
-                // Prevent line breaks in the middle of our stars
+                // Prevent line breaks in the middle of rating images and labels
                 elAnchor.style.whiteSpace="nowrap";
 
                 // Restore trailing text
