@@ -4,9 +4,10 @@
 // @description Converts selected tags on GoodReads into rating images (such as tags with half-star ratings)
 // @include     /^https?://.*\.goodreads\.com/.*$/
 // @grant       none
-// @version     1.0.3
+// @version     1.0.4
 // ==/UserScript==
 
+// TODO : Consider narrowing scope of anchor node scan and use query selector instead
 
 // Some examples of the tag naming format that will get matched :
 // (The range is 0-0 to 5-0)
@@ -143,6 +144,60 @@ function installEditShelfHook()
 
 
 //
+// Attempt to match and support a variety of rating tag formats created by other users
+//
+// ---------------------------------------
+// Some rating tag specimens from the wild
+//
+//   Whole star rating
+//      four-stars
+//      actual-rating-4-stars
+//
+//   Half star ratings
+//      four-and-one-half
+//      four-and-a-half-star
+//      4-half-star
+//      3-and-a-half-stars
+//      four-ana-half-stars
+//      actual-rating-4-half-star
+//
+function rewiteAlternateRatingFormats(tagName)
+{
+    // Ignore strings with the GoodReads format of 'N of N stars' in the formal (non-tag) rating area
+    // (Narrowing scope of anchor node search would remove need for this)
+    var ignoreGoodReadsRatingsAreaMatch = /.*\d of \d stars.*/i.exec(tagName);
+    if (ignoreGoodReadsRatingsAreaMatch == null)
+    {
+        // Convert string numerics to digits
+        tagName = tagName.replace(/five/gi,  "5");
+        tagName = tagName.replace(/four/gi,  "4");
+        tagName = tagName.replace(/three/gi, "3");
+        tagName = tagName.replace(/two/gi,   "2");
+        tagName = tagName.replace(/one/gi,   "1");
+        tagName = tagName.replace(/zero/gi,  "0");
+
+        // Remove leading and..."one"/"1"... sometimes found in front of "half" (complicates regexes below)
+        tagName = tagName.replace(/and( |-)*1( |-)*half/gi,  "half");
+
+        // Attempt to match half-star first, then whole star (whole star format is looser match, so must occur after half star)
+        //
+        // match : [0] = full match text, [1] = optional label, [2] = first numeric component, [3] = 'half'(half star regex) or 'star'(whole star regex)
+        var tagMatchHalf  = /(.*)(\d).*(half).*/i.exec(tagName);
+        var tagMatchWhole = /(.*)(\d).*(star).*/i.exec(tagName);
+
+        // If a match was found then rewrite it to the desired format of : <label>-<stars>-<N-N>
+        if (tagMatchHalf != null) {
+            tagName = tagMatchHalf[1] + '-stars-' + tagMatchHalf[2] + '-5';
+        } else if (tagMatchWhole != null) {
+            tagName = tagMatchWhole[1] + '-stars-' + tagMatchWhole[2] + '-0';
+        }
+    }
+
+    return(tagName);
+}
+
+
+//
 // Append an <img> tag with the given image data to an element
 //
 function appendImage(parentObj, imgData)
@@ -225,7 +280,6 @@ function renderTagImages(parentObj, imgType, imgValue)
 //
 function convertTagsToImages()
 {
-    var tagRegexp = /([\w-]*?)-*(stars|clouds)-(\d-\d)/;
     var objText;
     var elAnchor;
     var elLinks = document.getElementsByTagName( 'a' );
@@ -238,14 +292,21 @@ function convertTagsToImages()
         // Only convert anchor tags which haven't already been inspected
         if (elAnchor.hasAttribute("data-tag-image-inspected") == false)
         {
+            nodeText = elAnchor.text;
 
-            // Note : match[0] = full match text, [1] = optional label, [2] = "stars" or "clouds", [3] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
-            var match = tagRegexp.exec(elAnchor.text);
+            // match[0] = full match text, [1] = optional label, [2] = "stars" or "clouds", [3] = "N1-N2" where (ideally) N1 is a digit 0-9 and N2 is 0 or 5
+            var match = /([\w-]*?)-*(stars|clouds)-(\d-\d)/i.exec(nodeText);
+
+            // No match? Rework the tag format if possible and try the match again
+            if (match == null) {
+                nodeText = rewiteAlternateRatingFormats(nodeText);
+                match = /([\w-]*?)-*(stars|clouds)-(\d-\d)/i.exec(nodeText);
+            }
 
             if (match != null) {
 
                 // Strip out tag name and save off any trailing text (trailing text gets re-appended later)
-                objText = elAnchor.text.replace(match[0], "");
+                nodeText = nodeText.replace(match[0], "");
 
                 // Remove tag text temporarily
                 elAnchor.innerHTML = "";
@@ -260,7 +321,7 @@ function convertTagsToImages()
                 elAnchor.style.whiteSpace="nowrap";
 
                 // Restore trailing text
-                elAnchor.innerHTML = elAnchor.innerHTML + objText;
+                elAnchor.innerHTML = elAnchor.innerHTML + nodeText;
 
             } // End regex string match test
 
