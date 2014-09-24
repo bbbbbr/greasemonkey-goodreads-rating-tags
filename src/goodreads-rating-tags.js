@@ -1,10 +1,14 @@
 // ==UserScript==
-// @name        Goodreads tags to images
+// @name        Goodreads Rating Tags
 // @namespace   http://www.goodreads.com/*
 // @description Converts selected tags on GoodReads into rating images (such as tags with half-star ratings)
-// @include     /^https?://.*\.goodreads\.com/.*$/
+// @include     http://*.goodreads.com/*
+// @include     http://goodreads.com/*
+// @include     https://*.goodreads.com/*
+// @include     https://goodreads.com/*
 // @grant       none
 // @version     1.0.4
+// @license     GPL
 // ==/UserScript==
 
 // TODO : Consider narrowing scope of anchor node scan and use query selector instead
