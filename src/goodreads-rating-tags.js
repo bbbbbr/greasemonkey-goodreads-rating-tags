@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Goodreads Rating Tags
+// @name        Goodreads Half-Stars and Rating Tags
 // @namespace   http://www.goodreads.com/*
 // @description Converts selected tags on GoodReads into rating images (such as tags with half-star ratings)
 // @include     http://*.goodreads.com/*
