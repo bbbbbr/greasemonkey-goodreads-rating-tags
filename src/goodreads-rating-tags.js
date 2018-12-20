@@ -7,8 +7,11 @@
 // @include     https://*.goodreads.com/*
 // @include     https://goodreads.com/*
 // @grant       none
-// @version     1.0.4
-// @license     GPL
+// @version     1.0.5
+// @updateURL   https://openuserjs.org/install/bbbbbr/Goodreads_Half-Stars_and_Rating_Tags.user.js
+// @downloadURL https://openuserjs.org/install/bbbbbr/Goodreads_Half-Stars_and_Rating_Tags.user.js
+// @homepageURL https://openuserjs.org/scripts/bbbbbr/Goodreads_Half-Stars_and_Rating_Tags
+// @license     GPL-2.0-or-later
 // ==/UserScript==
 
 // TODO : Consider narrowing scope of anchor node scan and use query selector instead
