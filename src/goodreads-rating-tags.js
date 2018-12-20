@@ -93,7 +93,8 @@ function registerMutationObserver(selectorCriteria, monitorSubtree, callbackFunc
 function installTagShelfUpdateHook()
 {
     // Matches/watches the various types of tag shelfs (on the book list page, review edit page, book page, etc)
-    registerMutationObserver('[id*=shelfList]', false,
+    // Subtree monitoring enabled to catch updates to the shelvesSection div where the entire shelfList div is replaced
+    registerMutationObserver('[id*=shelfList],[id*=shelvesSection]', true,
         function(mutations) { convertTagsToImages(); }
     );
 }
@@ -284,6 +285,7 @@ function renderTagImages(parentObj, imgType, imgValue)
 //
 function convertTagsToImages()
 {
+    var nodeText;
     var objText;
     var elAnchor;
     var elLinks = document.getElementsByTagName( 'a' );
